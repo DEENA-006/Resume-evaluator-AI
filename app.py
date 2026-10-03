@@ -34,15 +34,27 @@ if not api_key:
 def set_custom_ui():
     st.markdown("""
     <style>
-        /* Remove ONLY the GitHub icon and link at the topmost right */
-        a[href*="github.com"] {
+        /* 1. Remove ONLY the GitHub icon and repository link at the topmost right */
+        header a[href*="github.com"],
+        [data-testid="stToolbar"] a[href*="github.com"],
+        a[href*="github.com"],
+        div[class*="viewerBadge"],
+        .viewerBadge_container__1QSob {
             display: none !important;
             visibility: hidden !important;
         }
 
-        /* Hide Streamlit bottom footer */
+        /* 2. Hide bottom footer */
         footer {
             visibility: hidden;
+        }
+
+        /* 3. Keep sidebar explicitly visible simultaneously */
+        section[data-testid="stSidebar"],
+        [data-testid="stSidebar"] {
+            display: block !important;
+            visibility: visible !important;
+            min-width: 320px !important;
         }
 
         /* App Background */
