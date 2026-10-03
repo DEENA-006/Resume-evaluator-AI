@@ -104,15 +104,43 @@ def set_custom_ui():
 set_custom_ui()
 
 
-# Helper function to display the PDF natively in Streamlit
+# Helper function to display the PDF natively in Streamlit using pypdfium2 image rendering
 def display_pdf(uploaded_file):
     try:
+        import pypdfium2 as pdfium
         bytes_data = uploaded_file.getvalue()
-        base64_pdf = base64.b64encode(bytes_data).decode('utf-8')
-        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800px" type="application/pdf"></iframe>'
-        st.markdown(pdf_display, unsafe_allow_html=True)
-    except Exception:
-        st.info("PDF preview unavailable in current browser mode.")
+        doc = pdfium.PdfDocument(bytes_data)
+        num_pages = len(doc)
+        
+        st.caption(f"📄 Document contains {num_pages} page{'s' if num_pages > 1 else ''}")
+        
+        # Render pages as crisp images
+        max_preview_pages = min(num_pages, 5)
+        for page_idx in range(max_preview_pages):
+            if num_pages > 1:
+                st.markdown(f"**Page {page_idx + 1} of {num_pages}**")
+            image = doc[page_idx].render(scale=2.0).to_pil()
+            st.image(image, use_container_width=True)
+            
+        if num_pages > 5:
+            st.info(f"Showing first 5 pages of {num_pages}. Use download button to view entire document.")
+            
+        st.download_button(
+            label="⬇️ Download Original PDF",
+            data=bytes_data,
+            file_name=uploaded_file.name,
+            mime="application/pdf",
+            use_container_width=True
+        )
+    except Exception as e:
+        st.warning("Visual preview could not be generated.")
+        st.download_button(
+            label="⬇️ Download PDF to View",
+            data=uploaded_file.getvalue(),
+            file_name=uploaded_file.name,
+            mime="application/pdf",
+            use_container_width=True
+        )
 
 st.title("📄 AI Resume Evaluator & ATS Matcher")
 st.caption("Powered by Gemini 3.5 Flash, FAISS Vector Search & LangChain")
