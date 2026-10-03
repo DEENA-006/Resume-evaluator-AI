@@ -11,7 +11,8 @@ load_dotenv()
 st.set_page_config(
     page_title="AI Resume Evaluator & ATS Matcher",
     page_icon="📄",
-    layout="wide" # Crucial for the side-by-side layout
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # Resolve Gemini API Key from environment or Streamlit Secrets
@@ -33,41 +34,36 @@ if not api_key:
 def set_custom_ui():
     st.markdown("""
     <style>
-        /* Hide top header, GitHub link/badge, Streamlit toolbar, and footer */
+        /* Transparent header so sidebar layout calculation remains intact */
         header[data-testid="stHeader"] {
-            display: none !important;
+            background-color: transparent !important;
         }
-        header {
-            visibility: hidden !important;
-            height: 0px !important;
-        }
-        [data-testid="stToolbar"] {
-            display: none !important;
-        }
-        .stDeployButton {
-            display: none !important;
-        }
-        #MainMenu {
-            visibility: hidden !important;
-            display: none !important;
-        }
+
+        /* Specifically hide ONLY the top-right GitHub link, deploy button, and badges */
+        .stDeployButton,
+        [data-testid="stDeployButton"],
+        [data-testid="manage-app-button"],
+        .viewerBadge_container__1QSob,
+        div[class*="viewerBadge"],
+        a[href*="github.com"],
+        #MainMenu,
         footer {
+            display: none !important;
             visibility: hidden !important;
-            display: none !important;
         }
-        div[class*="viewerBadge"] {
-            display: none !important;
-        }
-        a[href*="github.com"] {
-            display: none !important;
-        }
-        /* Ensure the sidebar toggle icon stays accessible */
-        [data-testid="collapsedControl"] {
-            visibility: visible !important;
+
+        /* Force sidebar to be visible and properly sized */
+        section[data-testid="stSidebar"],
+        [data-testid="stSidebar"] {
             display: block !important;
-            z-index: 999999 !important;
-            top: 15px !important;
-            left: 15px !important;
+            visibility: visible !important;
+            min-width: 300px !important;
+        }
+
+        [data-testid="stSidebarCollapseButton"],
+        [data-testid="collapsedControl"] {
+            display: block !important;
+            visibility: visible !important;
         }
 
         /* App Background */
