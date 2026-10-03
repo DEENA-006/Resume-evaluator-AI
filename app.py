@@ -34,36 +34,15 @@ if not api_key:
 def set_custom_ui():
     st.markdown("""
     <style>
-        /* Transparent header so sidebar layout calculation remains intact */
-        header[data-testid="stHeader"] {
-            background-color: transparent !important;
-        }
-
-        /* Specifically hide ONLY the top-right GitHub link, deploy button, and badges */
-        .stDeployButton,
-        [data-testid="stDeployButton"],
-        [data-testid="manage-app-button"],
-        .viewerBadge_container__1QSob,
-        div[class*="viewerBadge"],
-        a[href*="github.com"],
-        #MainMenu,
-        footer {
+        /* Remove ONLY the GitHub icon and link at the topmost right */
+        a[href*="github.com"] {
             display: none !important;
             visibility: hidden !important;
         }
 
-        /* Force sidebar to be visible and properly sized */
-        section[data-testid="stSidebar"],
-        [data-testid="stSidebar"] {
-            display: block !important;
-            visibility: visible !important;
-            min-width: 300px !important;
-        }
-
-        [data-testid="stSidebarCollapseButton"],
-        [data-testid="collapsedControl"] {
-            display: block !important;
-            visibility: visible !important;
+        /* Hide Streamlit bottom footer */
+        footer {
+            visibility: hidden;
         }
 
         /* App Background */
