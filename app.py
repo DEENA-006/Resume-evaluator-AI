@@ -34,27 +34,48 @@ if not api_key:
 def set_custom_ui():
     st.markdown("""
     <style>
-        /* 1. Remove ONLY the GitHub icon and repository link at the topmost right */
+        /* 1. Remove the GitHub button/icon from top-right toolbar (which is a button inside stToolbarActions) */
+        [data-testid="stToolbarActions"],
+        [data-testid="stToolbarActions"] button,
+        [data-testid="stToolbar"] button[aria-label*="GitHub" i],
+        [data-testid="stToolbar"] button[title*="GitHub" i],
+        [data-testid="stToolbar"] button[aria-label*="View source" i],
+        [data-testid="stToolbar"] button[title*="View source" i],
+        [data-testid="stToolbar"] button[aria-label*="Fork" i],
+        [data-testid="stToolbar"] button[title*="Fork" i],
         header a[href*="github.com"],
         [data-testid="stToolbar"] a[href*="github.com"],
         a[href*="github.com"],
         div[class*="viewerBadge"],
-        .viewerBadge_container__1QSob {
+        .viewerBadge_container__1QSob,
+        [data-testid="manage-app-button"] {
             display: none !important;
             visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            width: 0px !important;
+            height: 0px !important;
+            margin: 0px !important;
+            padding: 0px !important;
         }
 
         /* 2. Hide bottom footer */
         footer {
             visibility: hidden;
+            display: none !important;
         }
 
-        /* 3. Keep sidebar explicitly visible simultaneously */
+        /* 3. Keep sidebar explicitly visible and docked simultaneously */
         section[data-testid="stSidebar"],
         [data-testid="stSidebar"] {
             display: block !important;
             visibility: visible !important;
             min-width: 320px !important;
+        }
+
+        [data-testid="collapsedControl"] {
+            display: block !important;
+            visibility: visible !important;
         }
 
         /* App Background */
