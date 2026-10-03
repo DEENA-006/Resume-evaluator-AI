@@ -1,14 +1,29 @@
 import base64
+import os
 import streamlit as st
+from dotenv import load_dotenv
 from parser import load_and_parse_pdf
 from vector_store import chunk_documents, build_faiss_vectorstore, retrieve_relevant_chunks
 from chains import run_full_evaluation_pipeline
+
+load_dotenv()
 
 st.set_page_config(
     page_title="AI Resume Evaluator & ATS Matcher",
     page_icon="📄",
     layout="wide" # Crucial for the side-by-side layout
 )
+
+# Resolve Gemini API Key from environment or Streamlit Secrets
+api_key = os.getenv("GOOGLE_API_KEY")
+if not api_key:
+    try:
+        if hasattr(st, "secrets") and "GOOGLE_API_KEY" in st.secrets:
+            api_key = st.secrets["GOOGLE_API_KEY"]
+            os.environ["GOOGLE_API_KEY"] = api_key
+    except Exception:
+        pass
+
 # ==========================================
 # NEW: Custom CSS Injection for Modern UI
 # ==========================================
@@ -91,17 +106,35 @@ set_custom_ui()
 
 # Helper function to display the PDF natively in Streamlit
 def display_pdf(uploaded_file):
-    bytes_data = uploaded_file.getvalue()
-    base64_pdf = base64.b64encode(bytes_data).decode('utf-8')
-    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800px" type="application/pdf"></iframe>'
-    st.markdown(pdf_display, unsafe_allow_html=True)
+    try:
+        bytes_data = uploaded_file.getvalue()
+        base64_pdf = base64.b64encode(bytes_data).decode('utf-8')
+        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800px" type="application/pdf"></iframe>'
+        st.markdown(pdf_display, unsafe_allow_html=True)
+    except Exception:
+        st.info("PDF preview unavailable in current browser mode.")
 
 st.title("📄 AI Resume Evaluator & ATS Matcher")
-st.caption("Powered by Gemini 3.8 Flash, FAISS Vector Search & LangChain")
+st.caption("Powered by Gemini 3.5 Flash, FAISS Vector Search & LangChain")
 
 # Sidebar: Inputs
 with st.sidebar:
     st.header("1. Input Data")
+    
+    # Allow manual API key input if not found in environment/secrets
+    if not api_key:
+        user_key = st.text_input(
+            "🔑 Google Gemini API Key",
+            type="password",
+            placeholder="AIzaSy...",
+            help="Enter your Google Gemini API key. It will only be used for this session."
+        )
+        if user_key:
+            api_key = user_key
+            os.environ["GOOGLE_API_KEY"] = user_key
+        else:
+            st.warning("⚠️ No `GOOGLE_API_KEY` detected. Please enter it above or configure it in your deployment Secrets.")
+
     uploaded_file = st.file_uploader("Upload Resume (PDF)", type=["pdf"])
     job_description = st.text_area(
         "Target Job Description (JD)",
@@ -112,7 +145,9 @@ with st.sidebar:
 
 # Main Execution Flow
 if evaluate_btn:
-    if not uploaded_file:
+    if not api_key:
+        st.error("🔑 Google Gemini API Key missing! Please enter your API key in the sidebar or configure GOOGLE_API_KEY in your deployment environment/secrets.")
+    elif not uploaded_file:
         st.error("Please upload a resume PDF first.")
     elif not job_description.strip():
         st.error("Please provide a target Job Description.")
@@ -122,12 +157,19 @@ if evaluate_btn:
             pages = load_and_parse_pdf(uploaded_file, original_filename=uploaded_file.name)
             full_text = "\n\n".join([doc.page_content for doc in pages])
             
+            if not full_text.strip():
+                st.error("⚠️ Could not extract text from the PDF. Please ensure the PDF has selectable text and is not a scanned image.")
+                st.stop()
+
             st.write("✂️ Generating local embeddings and building FAISS index...")
-            chunks = chunk_documents(pages, chunk_size=500, chunk_overlap=100)
-            vectorstore = build_faiss_vectorstore(chunks)
+            try:
+                chunks = chunk_documents(pages, chunk_size=500, chunk_overlap=100)
+                vectorstore = build_faiss_vectorstore(chunks)
+            except Exception as e:
+                st.warning(f"Note: Vector indexing step encountered an issue ({e}), continuing with LLM analysis...")
 
             st.write("🧠 Executing 4-step evaluation pipeline (Extract → Score → Coach → Cover Letter)...")
-            results = run_full_evaluation_pipeline(full_text, job_description)
+            results = run_full_evaluation_pipeline(full_text, job_description, api_key=api_key)
 
             status.update(label="Evaluation Finished Successfully!", state="complete", expanded=False)
 

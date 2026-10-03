@@ -9,9 +9,18 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 load_dotenv()
 
 
-def get_embedding_model() -> HuggingFaceEmbeddings:
-    """Local, lightweight 384-dimensional embedding model running on CPU."""
-    return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+def get_embedding_model():
+    """Local embedding model with fallback to Google embeddings for cloud resilience."""
+    try:
+        from langchain_community.embeddings import HuggingFaceEmbeddings
+        return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    except Exception as e:
+        try:
+            from langchain_google_genai import GoogleGenerativeAIEmbeddings
+            api_key = os.getenv("GOOGLE_API_KEY")
+            return GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key=api_key)
+        except Exception:
+            raise e
 
 
 def chunk_documents(

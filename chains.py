@@ -8,12 +8,23 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 load_dotenv()
 
-# 1. SWITCHED MODEL: We are using 3.5-flash to bypass the exhausted 3.8-flash quota.
-llm = ChatGoogleGenerativeAI(
-    model="gemini-3.5-flash",
-    temperature=0.0,
-    google_api_key=os.getenv("GOOGLE_API_KEY")
-)
+def get_llm(api_key: str = None, model_name: str = "gemini-3.5-flash"):
+    """Safely retrieves or instantiates ChatGoogleGenerativeAI with provided or env API key."""
+    key = api_key or os.getenv("GOOGLE_API_KEY")
+    if not key:
+        raise ValueError("GOOGLE_API_KEY not found. Please provide an API key via environment, Streamlit secrets, or sidebar.")
+    return ChatGoogleGenerativeAI(
+        model=model_name,
+        temperature=0.0,
+        google_api_key=key
+    )
+
+# Optional fallback reference for backwards compatibility
+try:
+    _default_key = os.getenv("GOOGLE_API_KEY")
+    llm = get_llm(api_key=_default_key) if _default_key else None
+except Exception:
+    llm = None
 
 # ==========================================
 # Unified Schema (Everything in 1 Request)
@@ -40,9 +51,15 @@ class ComprehensiveEvaluation(BaseModel):
 # ==========================================
 # Single Pipeline Orchestrator
 # ==========================================
-def run_full_evaluation_pipeline(resume_text: str, job_description: str) -> dict:
+def run_full_evaluation_pipeline(
+    resume_text: str, 
+    job_description: str,
+    api_key: str = None,
+    model_name: str = "gemini-3.5-flash"
+) -> dict:
     """Executes Extraction, Scoring, Coaching, and Cover Letter in ONE single API call."""
     
+    current_llm = get_llm(api_key=api_key, model_name=model_name)
     parser = JsonOutputParser(pydantic_object=ComprehensiveEvaluation)
 
     prompt = ChatPromptTemplate.from_messages([
@@ -54,7 +71,7 @@ def run_full_evaluation_pipeline(resume_text: str, job_description: str) -> dict
     ]).partial(format_instructions=parser.get_format_instructions())
 
     # Create the single execution chain
-    chain = prompt | llm | parser
+    chain = prompt | current_llm | parser
 
     # MAKE EXACTLY 1 API CALL
     raw_result = chain.invoke({
