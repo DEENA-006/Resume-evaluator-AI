@@ -1,0 +1,13 @@
+# Environments
+venv/
+env/
+
+# Environment variables (CRITICAL)
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS generated files
+.DS_Store
