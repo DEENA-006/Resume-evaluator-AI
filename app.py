@@ -33,8 +33,42 @@ if not api_key:
 def set_custom_ui():
     st.markdown("""
     <style>
-        /* Only hide the bottom footer, keep the header and menu visible for controls */
-        footer {visibility: hidden;}
+        /* Hide top header, GitHub link/badge, Streamlit toolbar, and footer */
+        header[data-testid="stHeader"] {
+            display: none !important;
+        }
+        header {
+            visibility: hidden !important;
+            height: 0px !important;
+        }
+        [data-testid="stToolbar"] {
+            display: none !important;
+        }
+        .stDeployButton {
+            display: none !important;
+        }
+        #MainMenu {
+            visibility: hidden !important;
+            display: none !important;
+        }
+        footer {
+            visibility: hidden !important;
+            display: none !important;
+        }
+        div[class*="viewerBadge"] {
+            display: none !important;
+        }
+        a[href*="github.com"] {
+            display: none !important;
+        }
+        /* Ensure the sidebar toggle icon stays accessible */
+        [data-testid="collapsedControl"] {
+            visibility: visible !important;
+            display: block !important;
+            z-index: 999999 !important;
+            top: 15px !important;
+            left: 15px !important;
+        }
 
         /* App Background */
         .stApp {
